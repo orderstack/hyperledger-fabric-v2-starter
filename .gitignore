@@ -1,0 +1,32 @@
+# Emacs backup files
+*~
+*#
+.#*
+# Vim file artifacts
+.*.sw*
+# installed platform-specific binaries
+/bin
+/config
+.DS_Store
+.project
+# omit Go vendor directories
+vendor/
+.vscode
+.gradle
+node_modules/
+wallet/
+log.txt
+nextblock.txt
+addMarbles.json
+patient_data.tar.gz
+mychannel_patient_data.log
+mychannel__lifecycle.log
+ordererOrganizations
+peerOrganizations
+network/organizations/main/*/fabric-ca
+network/organizations/additionalOrganizations/*/fabric-ca
+*.tx
+*.tar.gz
+*.block
+*.log
+test/
