@@ -8,6 +8,112 @@ allows you to add more organizations if needed.
 
 This sample uses the [Fabric network event listener](https://hyperledger.github.io/fabric-sdk-node/release-1.4/tutorial-channel-events.html) from the Node.JS Fabric SDK to write data to local instance of CouchDB.
 
+### Directory layout
+
+```
+hyperledger-fabric-starter/
+├── bin/  # all hyperledger fabric binaries reside here
+│   ├── configtxgen  # https://hyperledger-fabric.readthedocs.io/en/stable/configtxgen.html
+│   ├── configtxlator  # https://hyperledger-fabric.readthedocs.io/en/stable/configtxlator.html
+│   ├── cryptogen  # for generating all crypto material for the organizations
+│   ├── discover
+│   ├── fabric-ca-client  # fabric certificate authority client for generating org certificates
+│   ├── fabric-ca-server  # fabric certificate authority server for generating org certificates
+│   ├── idemixgen
+│   ├── orderer  # to interact with the orderer of the network
+│   └── peer  # to interact with the peers of the network
+├── config/
+│   ├── configtx.yaml  # auto downloaded by hyperledger fabric after running init.sh
+│   ├── core.yaml  # auto downloaded by hyperledger fabric after running init.sh
+│   └── orderer.yaml  # auto downloaded by hyperledger fabric after running init.sh
+├── network/
+│   ├── addOrgs/
+│   │   ├── ccp/
+│   │   │   ├── ccp-template.json  # ccp config json template
+│   │   │   ├── ccp-template.yaml  # ccp config yaml template
+│   │   │   └── ccp_helper.sh  # ccp helper script to fill in the params in the template
+│   │   ├── .env  # environment variables for docker containers
+│   │   ├── addOrg.sh  # helper cli script to add organizations to already running network
+│   │   ├── envVarCLI.sh  # export path variables for addOrg.sh
+│   │   ├── step1org.sh  # step1 commands to add a organization
+│   │   └── step2org.sh  # step2 commands to add a organization
+│   ├── chaincode/
+│   │   └── marbles/
+│   │   │   └── javascript/
+│   │   │   │   ├── META-INF/
+│   │   │   │   │   └── statedb/
+│   │   │   │   │   │   └── couchdb/
+│   │   │   │   │   │   │   └── indexes/  # define indexes for data inside couchdb as state database for a peer
+│   │   │   │   │   │   │   │   └── indexOwner.json
+│   │   │   │   ├── .gitignore
+│   │   │   │   ├── .prettierrc
+│   │   │   │   ├── marbles_chaincode.js  # chaincode definition in javascript
+│   │   │   │   ├── package-lock.json
+│   │   │   │   └── package.json
+│   ├── code/
+│   │   ├── .prettierrc
+│   │   ├── addMarbles.js  # node js code to invoke adding marble function of the smart contract
+│   │   ├── blockEventListener.js  # to listen for ledger block events
+│   │   ├── blockProcessing.js  # sync ledger block events to off chain database
+│   │   ├── config.json  # config to connect to off chain database and peer
+│   │   ├── couchdbutil.js  # couch db functions to insert objects into offchain couchDB
+│   │   ├── deleteMarble.js  # node js code to invoke delete marble function of the smart contract
+│   │   ├── enrollAdmin.js  # enroll a admin user for the node application code
+│   │   ├── offChainInit.sh  # init script for initializing dependencies for the sample code
+│   │   ├── package-lock.json
+│   │   ├── registerUser.js  # register user for sample code
+│   │   └── transferMarble.js  # node js code to invoke transfer marble function of the smart contract
+│   ├── organizations/
+│   │   ├── additionalOrganizations/
+│   │   │   ├── org3/
+│   │   │   │   ├── fabric-ca/
+│   │   │   │   │   └── fabric-ca-server-config.yaml  # fabric CA server config for generating certificates
+│   │   │   │   ├── ccp.sh  # org3 specific CCP env variables
+│   │   │   │   ├── configtx.yaml  # config for configtx which is org3 specific
+│   │   │   │   ├── crypto-config.yaml  # crypto config for org3
+│   │   │   │   ├── docker-compose-ca.yaml  # docker compose container conf for CA server ca_org3 server
+│   │   │   │   ├── docker-compose-couch.yaml  # docker compose container conf for couch database for org3 peer
+│   │   │   │   ├── docker-compose-test-net.yaml  # docker compose container conf for org3 peers
+│   │   │   │   └── registerEnroll.sh  # register enroll scripts for generating all CA certificates for org3
+│   │   ├── main/
+│   │   │   ├── ordererOrg/
+│   │   │   │   ├── fabric-ca/
+│   │   │   │   │   └── fabric-ca-server-config.yaml  # fabric CA server config for generating certificates
+│   │   │   │   ├── crypto-config.yaml  # crypto config for orderer node
+│   │   │   │   ├── docker-compose-ca.yaml  # docker compose container conf for CA server orderer node
+│   │   │   │   ├── docker-compose-test-net.yaml  # docker compose container conf for orderer peer
+│   │   │   │   └── registerEnroll.sh  # register enroll scripts for generating all CA certificates for orderer
+│   │   │   └── org1/
+│   │   │   │   ├── fabric-ca/
+│   │   │   │   │   └── fabric-ca-server-config.yaml  # fabric CA server config for generating certificates
+│   │   │   │   ├── ccp.sh  # org1 specific CCP env variables
+│   │   │   │   ├── crypto-config.yaml  # crypto config for org1 peer
+│   │   │   │   ├── docker-compose-ca.yaml  # docker compose container conf for CA server ca_org1
+│   │   │   │   ├── docker-compose-couch.yaml  # docker compose container conf for couch database for org1 peer
+│   │   │   │   ├── docker-compose-test-net.yaml  # docker compose container conf for org1 peers
+│   │   │   │   └── registerEnroll.sh  # register enroll scripts for generating all CA certificates for org
+│   ├── scripts/
+│   │   ├── ccp/
+│   │   │   ├── ccp-template.json  # ccp config json template
+│   │   │   ├── ccp-template.yaml  # ccp config yaml template
+│   │   │   └── ccp_helper.sh  # ccp helper script to fill in the params in the template
+│   │   ├── configtx/
+│   │   │   └── configtx.yaml  # base network configtx which defines the network definition
+│   │   ├── .env  # environment variables for docker containers
+│   │   ├── createChannel.sh  # script to create channel inside the network
+│   │   ├── deployCCMultiOrg.sh  # script to deploy a sample chaincode on the multi org network
+│   │   ├── deployCCSingleOrg.sh  # script to deploy a sample chaincode on the single org network
+│   │   ├── envVar.sh  # env variables helpers for global varibles of the scripts
+│   │   ├── network.sh  # network cli helper script to interact with the network on whole
+│   │   ├── testCCMultipleOrg.sh  # test the deployed chaincode on the multi org network
+│   │   └── testCCSingleOrg.sh  # test the deployed chaincode on the single org network
+│   ├── system-genesis-block/  # folder to store the system genesis block of the network
+│   │   └── .gitkeep
+├── .gitignore
+├── README.md
+└── init.sh # init script to download the binaries[bin/] and the default config files[config/]
+```
+
 ## Getting started
 
 Use the following command to initialize the hyperledger fabric binaries and docker images from the hyperledger repository
