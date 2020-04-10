@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# Export varibles needed in the file
 export PATH=$PWD/../../bin:$PWD:$PATH
 export FABRIC_CFG_PATH=$PWD/configtx
 export VERBOSE=false
+
+# Set the peerOrgFolderPath path
 peerOrgFolderPath=../organizations/peerOrganizations
+
 # Versions of fabric known not to work with the test network
 BLACKLISTED_VERSIONS="^1\.0\. ^1\.1\. ^1\.2\. ^1\.3\. ^1\.4\."
 
@@ -87,7 +91,6 @@ function checkPrereqs() {
 }
 
 # Obtain CONTAINER_IDS and remove them
-# TODO Might want to make this optional - could clear other containers
 # This function is called when you bring a network down
 function clearContainers() {
 	CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*/) {print $1}')
@@ -112,12 +115,13 @@ function removeUnwantedImages() {
 
 # Tear down running network
 function networkDown() {
-	# stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
+	# Stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
 	for org in $(ls ../organizations/main); do
 		CA_DOCKER_FILE=../organizations/main/${org}/docker-compose-ca.yaml
 		FILE_BASE_DOCKER=../organizations/main/${org}/docker-compose-test-net.yaml
 		COUCHBASE_DOCKER=../organizations/main/${org}/docker-compose-couch.yaml
 
+		# Check if there is a .yaml file in the directory, if yes then down the image from docker
 		if [ -s $CA_DOCKER_FILE ]; then
 			docker-compose -f $CA_DOCKER_FILE down --volumes --remove-orphans
 		fi
@@ -141,16 +145,17 @@ function networkDown() {
 		clearContainers
 		#Cleanup images
 		removeUnwantedImages
-		# remove orderer block and other channel configuration transactions and certs
+		# Remove orderer block and other channel configuration transactions and certs
 		rm -rf ../system-genesis-block/*.block $peerOrgFolderPath ../organizations/ordererOrganizations
 
-		# remove fabric ca artifacts
-
+		# Remove fabric ca artifacts
 		rm -rf ../code/wallet
 		rm -rf *.json *.log ../code/nextblock.txt
 		rm -rf ../code/addMarbles.json ../code/*.log
 		rm -rf *.tar.gz
 
+		# Loop through the ../organizations/main directory and get the name of all the 
+		# organizations and remove the files generated while starting the network
 		for org in $(ls ../organizations/main); do
 			rm -rf ../organizations/main/${org}/fabric-ca/msp
 			rm -rf ../organizations/main/${org}/fabric-ca/tls-cert.pem
@@ -159,7 +164,7 @@ function networkDown() {
 			rm -rf ../organizations/main/${org}/fabric-ca/IssuerRevocationPublicKey
 			rm -rf ../organizations/main/${org}/fabric-ca/fabric-ca-server.db
 		done
-		# remove channel and script artifacts
+		# Remove channel and script artifacts
 		rm -rf ../channel-artifacts log.txt ../*.tar.gz *.tx *.block
 
 		docker stop offchaindb
@@ -167,26 +172,33 @@ function networkDown() {
 	fi
 }
 
+# Start the network
 function networkUp() {
+	# Check for any prerequisits required before starting the network
 	checkPrereqs
 
-	# generate artifacts if they don't exist
+	# Generate artifacts if they don't exist
 	if [ ! -d "$peerOrgFolderPath" ]; then
 		createOrgs
 		createConsortium
 	fi
 
+	# Loop through the ../organizations/main directory to get the name of all the organizations
 	for org in $(ls ../organizations/main); do
 		FILE_BASE_DOCKER=../organizations/main/${org}/docker-compose-test-net.yaml
 		COUCHBASE_DOCKER=../organizations/main/${org}/docker-compose-couch.yaml
 
+		# If no docker-compose-test-net.yaml is found, then through an error
 		if [ ! -s $FILE_BASE_DOCKER ]; then
 			echo "$FILE_BASE_DOCKER not found please verify and add config"
 			exit 1
 		fi
 
+		# Create a variable and store the file path of the .yaml file with "-f" added to it
 		COMPOSE_FILES="-f ${FILE_BASE_DOCKER}"
 
+		# Only if the database couchdb is selceted and if the org is not an orderer, change the 
+		# COMPOSE_FILES variable to the COUCHBASE_DOCKER file path
 		if [ "${DATABASE}" == "couchdb" -a "$org" != "ordererOrg" ]; then
 			if [ ! -s $COUCHBASE_DOCKER ]; then
 				echo "$FILE_BASE_DOCKER not found please verify and add config"
@@ -194,18 +206,24 @@ function networkUp() {
 			fi
 			COMPOSE_FILES="${COMPOSE_FILES} -f ${COUCHBASE_DOCKER}"
 		fi
-		set -x
+
+		set -x		
+		# Get the $IMAGETAG variable from the .env file and give it to the IMAGE_TAG variable 
+		# in the docker-compose-test-net.yaml file for it to use it and run the docker-compose command for the peer to start
 		IMAGE_TAG=$IMAGETAG docker-compose ${COMPOSE_FILES} up -d 2>&1
 		set +x
 	done
 
+	# List all the docker processes
 	docker ps -a
+	# If no docker process exist, throw an error
 	if [ $? -ne 0 ]; then
 		echo "ERROR !!!! Unable to start network"
 		exit 1
 	fi
 }
 
+# Create a channel by running this function
 function createChannel() {
 
 	## Bring up the network if it is not arleady up.
@@ -227,7 +245,9 @@ function createChannel() {
 
 }
 
+# Create a consortium by running this function
 function createConsortium() {
+	# Print the path for the configtxgen file
 	which configtxgen
 	if [ "$?" -ne 0 ]; then
 		echo "configtxgen tool not found. exiting"
@@ -239,6 +259,7 @@ function createConsortium() {
 	# Note: For some unknown reason (at least for now) the block file can't be
 	# named orderer.genesis.block or the orderer will fail to launch!
 	set -x
+	# Run the configtxgen command the TwoOrgsOrdererGenesis, system-channel are from the configtx.yaml file
 	configtxgen -profile TwoOrgsOrdererGenesis -channelID system-channel -outputBlock ../system-genesis-block/genesis.block
 	res=$?
 	set +x
@@ -248,7 +269,9 @@ function createConsortium() {
 	fi
 }
 
+# Let's start creating organizations
 function createOrgs() {
+	# Delete any peers if exists in the organizations
 	if [ -d "$peerOrgFolderPath" ]; then
 		rm -Rf $peerOrgFolderPath && rm -Rf ../organizations/ordererOrganizations
 	fi
@@ -272,6 +295,8 @@ function createOrgs() {
 			echo "##########################################################"
 			if [ -s "../organizations/main/${org}/crypto-config.yaml" ]; then
 				set -x
+				# Check if the crypto-config.yaml file for the organization exists and then run the command below:
+				# This command creates certificates in the organizations folder for the respective orgs
 				cryptogen generate --config=../organizations/main/${org}/crypto-config.yaml --output="../organizations"
 				res=$?
 				set +x
@@ -303,6 +328,7 @@ function createOrgs() {
 			echo "##########################################################"
 			if [ -s "../organizations/main/${org}/docker-compose-ca.yaml" ]; then
 				set -x
+				# Create certificates in the docker images by running the below comamnd
 				IMAGE_TAG=$IMAGETAG docker-compose -f ../organizations/main/${org}/docker-compose-ca.yaml up -d 2>&1
 				set +x
 			else
@@ -311,7 +337,7 @@ function createOrgs() {
 			fi
 		done
 
-		# give time for docker containers to start
+		# Give time for docker containers to start
 		sleep 10
 
 		for org in $(ls ../organizations/main); do
@@ -320,7 +346,9 @@ function createOrgs() {
 			echo "##########################################################"
 			if [ -s "../organizations/main/${org}/registerEnroll.sh" ]; then
 				set -x
+				# Give admin access to registerEnroll.sh file
 				chmod 700 ../organizations/main/${org}/registerEnroll.sh
+				# Run the registerEnroll.sh file for the respective org
 				. ../organizations/main/${org}/registerEnroll.sh
 				set +x
 			else
@@ -340,6 +368,7 @@ function createOrgs() {
 				echo "##########################################################"
 				if [ -s "../organizations/main/${org}/ccp.sh" ]; then
 					. ../organizations/main/${org}/ccp.sh
+					# Generate ccp files by reading the respective json and yaml file configs
 					echo "$(json_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" >$peerOrgFolderPath/${org}.example.com/connection-${org}.json
 					echo "$(yaml_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" >$peerOrgFolderPath/${org}.example.com/connection-${org}.yaml
 				else
@@ -401,6 +430,7 @@ fi
 
 # parse flags
 
+# If the parameters given are either of the one's given below, set the variables to the respective parameters
 while [[ $# -ge 1 ]]; do
 	key="$1"
 	case $key in
