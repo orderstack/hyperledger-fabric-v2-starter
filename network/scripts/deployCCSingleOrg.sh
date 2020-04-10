@@ -1,5 +1,7 @@
 #!/bin/bash
 # Exit on first error
+
+# This file is run to create a Single Organziation Network
 set -e pipefail
 
 starttime=$(date +%s)
@@ -76,6 +78,7 @@ else
 fi
 
 # parsePeerConnectionParameters 1 2
+# Get the peer connection parameters from the envVar.sh file for the given organizations 
 parsePeerConnectionParameters 1
 
 echo "Commit the chaincode definition to the channel"

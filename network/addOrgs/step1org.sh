@@ -4,6 +4,7 @@
 # configuration transaction to add org to the test network
 #
 
+# Get the parameters and store them in variables
 CHANNEL_NAME="$1"
 DELAY="$2"
 TIMEOUT="$3"

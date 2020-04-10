@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# This is a ccp helper file which is used to make the ccp templates
+
 function one_line_pem() {
 	echo "`awk 'NF {sub(/\\n/, ""); printf "%s\\\\\\\n",$0;}' $1`"
 }

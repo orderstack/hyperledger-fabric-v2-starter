@@ -1,3 +1,5 @@
+# This file contains the environment variables for generating the ccp files
+
 ORG=1
 P0PORT=7051
 CAPORT=7054

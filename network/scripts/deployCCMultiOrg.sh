@@ -2,6 +2,8 @@
 # Exit on first error
 set -e pipefail
 
+# This file is run when a multi Org netwrok is to be set up
+
 starttime=$(date +%s)
 CC_SRC_LANGUAGE=javascript
 CC_RUNTIME_LANGUAGE=node
@@ -91,6 +93,8 @@ else
 fi
 
 # parsePeerConnectionParameters 1 2
+
+# Add the organization numbers to get the respective parameteres for them
 parsePeerConnectionParameters 1 3
 
 echo "Commit the chaincode definition to the channel"

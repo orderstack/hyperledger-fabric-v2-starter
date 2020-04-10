@@ -1,3 +1,5 @@
+# This file is run when the network is up and the orderer is created
+
 echo
 echo "Enroll the CA admin"
 ORGANIZATION_FOLDER_PATH=$PWD/../organizations/ordererOrganizations

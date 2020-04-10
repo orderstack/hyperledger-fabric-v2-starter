@@ -111,7 +111,7 @@ function generateOrg() {
 	echo "$(yaml_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" >$peerOrgFolderPath/${ORG_NAME}.example.com/connection-${ORG_NAME}.yaml
 }
 
-# Generate channel configuration transaction
+# Generate org definition files
 function generateOrgDefinition() {
 	which configtxgen
 	if [ "$?" -ne 0 ]; then
@@ -133,6 +133,7 @@ function generateOrgDefinition() {
 	echo
 }
 
+# Create the new organization docker image
 function OrgUp() {
 	FILE_BASE_DOCKER=$additionalOrganizationFolderPath/${ORG_NAME}/docker-compose-test-net.yaml
 	COUCHBASE_DOCKER=$additionalOrganizationFolderPath/${ORG_NAME}/docker-compose-couch.yaml

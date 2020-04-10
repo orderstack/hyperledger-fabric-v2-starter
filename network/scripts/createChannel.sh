@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This file is run when a new channel need to be created
+
 CHANNEL_NAME="$1"
 DELAY="$2"
 MAX_RETRY="$3"
@@ -17,6 +19,7 @@ if [ ! -d "$CHANNEL_ARTIFACT_PATH" ]; then
 	mkdir channel-artifacts
 fi
 
+# Function to create channel transaction
 createChannelTx() {
 
 	set -x
@@ -31,6 +34,7 @@ createChannelTx() {
 
 }
 
+# Function to create anchor peer transaction
 createAncorPeerTx() {
 
 	for orgmsp in Org1MSP; do
@@ -48,12 +52,16 @@ createAncorPeerTx() {
 	done
 }
 
+# Function to create channel
 createChannel() {
+	# Set the variables to the respective organization number
 	setGlobals 1
 
 	# Poll in case the raft leader is not set yet
 	local rc=1
 	local COUNTER=1
+
+	# Add peers to channel
 	while [ $rc -ne 0 -a $COUNTER -lt $MAX_RETRY ]; do
 		sleep $DELAY
 		if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
@@ -98,6 +106,7 @@ joinChannel() {
 	verifyResult $res "After $MAX_RETRY attempts, peer0.org${ORG} has failed to join channel '$CHANNEL_NAME' "
 }
 
+# Function to update anchor peers
 updateAnchorPeers() {
 	ORG=$1
 	setGlobals $ORG
