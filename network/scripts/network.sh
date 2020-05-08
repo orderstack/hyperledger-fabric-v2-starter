@@ -221,6 +221,10 @@ function networkUp() {
 		echo "ERROR !!!! Unable to start network"
 		exit 1
 	fi
+
+	# Give time for docker containers to start
+	echo "Waiting for all the containers to start"
+	sleep 15
 }
 
 # Create a channel by running this function
